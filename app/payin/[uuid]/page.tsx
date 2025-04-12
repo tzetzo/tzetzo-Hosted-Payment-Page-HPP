@@ -1,8 +1,10 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,46 +14,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRouter } from "next/navigation";
-import { formatTime } from "@/app/helpers/format-time";
+import StatusMessage from "@/components/StatusMessage";
+import { useExpiryContext } from "@/context/ExpiryContext";
+import { useCountdownTimer } from "@/hooks/useCountdownTimer";
+import { useRequest } from "@/hooks/useRequest";
+import { formatTime } from "@/helpers/format-time";
+import { CurrencyEnum, CurrencyCode } from "@/constants/currencyEnum";
+import { PaymentSummary } from "@/types/payment";
 
 interface AcceptQuotePageProps {
   params: Promise<{ uuid: string }>;
 }
 
-interface UpdatedData {
-  paidCurrency?: {
-    amount: string;
-    currency: string;
-  };
-  acceptanceExpiryDate?: string;
-}
-
 export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
   const { uuid } = use(params);
   const router = useRouter();
+  const [seconds, setSeconds] = useCountdownTimer(0);
 
-  const [seconds, setSeconds] = useState<number>(0);
-  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+  const { setExpiryDate, setUUID } = useExpiryContext();
+
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode | null>(
+    null
+  );
   const [showDetails, setShowDetails] = useState(false);
 
-  const [updatedData, setUpdatedData] = useState<UpdatedData | null>(null);
+  const [updatedData, setUpdatedData] = useState<PaymentSummary | null>(null);
   const [buttonDisabled, setButtonDisabled] = useState<boolean>(false);
-  const [buttonText, setButtonText] = useState<string>("Confirm");
+  const [buttonText, setButtonText] = useState<"Confirm" | "Processing...">(
+    "Confirm"
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["paymentSummary", uuid],
-    queryFn: async () => {
-      const response = await axios.get(
-        `https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/summary`
-      );
-      return response.data;
-    },
-    enabled: !!uuid, // Only fetch if uuid is available
-  });
+  const { data, isLoading, error } = useRequest<PaymentSummary>(
+    uuid,
+    "GET",
+    "summary"
+  );
+
+  useEffect(() => {
+    if (data?.expiryDate) {
+      // We set the expiryDate here to redirect to /expired if the expiryDate is in the past
+      // The expiryDate remains consistent when making '/${uuid}/summary' request from both '<DOMAIN>/payin/<UUID>' and '<DOMAIN>/payin/<UUID>/pay' pages
+      setExpiryDate(data.expiryDate);
+      setUUID(uuid);
+    }
+  }, [data, setExpiryDate, setUUID, uuid]);
 
   const updateSummaryMutation = useMutation({
-    mutationFn: async (currency: string) => {
+    mutationFn: async (currency: CurrencyCode) => {
       const response = await axios.put(
         `https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/update/summary`,
         {
@@ -59,10 +69,9 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
           payInMethod: "crypto",
         }
       );
-
       return response.data;
     },
-    onSuccess: (data: UpdatedData) => {
+    onSuccess: (data: PaymentSummary) => {
       setUpdatedData(data);
       setShowDetails(true);
 
@@ -79,7 +88,11 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
 
         if (timeDifference > 0) {
           setTimeout(() => {
-            updateSummaryMutation.mutate(selectedCurrency || "");
+            if (selectedCurrency) {
+              updateSummaryMutation.mutate(selectedCurrency);
+            } else {
+              console.error("No currency selected");
+            }
           }, timeDifference * 1000);
         }
       } else {
@@ -92,24 +105,19 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
         axios.isAxiosError(error) &&
         error.response?.status === 400 &&
         error.response?.data &&
-        error.response.data.code === "MER-PAY-2017"
+        error.response.data.code === "MER-PAY-2003"
       ) {
-        console.warn("Payment already expired");
-        router.push(`/payin/${uuid}/expired`);
+        setErrorMessage(error.response.data.message);
+        setTimeout(() => {
+          router.push(`/payin/${uuid}/pay`);
+        }, 3000);
+      } else {
+        setErrorMessage("Error updating payment summary. Please try again.");
       }
     },
   });
 
-  useEffect(() => {
-    if (seconds === 0) return;
-    const timer = setInterval(
-      () => setSeconds((prev) => Math.max(0, prev - 1)),
-      1000
-    );
-    return () => clearInterval(timer);
-  }, [seconds]);
-
-  const handleCurrencyChange = (currency: string) => {
+  const handleCurrencyChange = (currency: CurrencyCode) => {
     setSelectedCurrency(currency);
     updateSummaryMutation.mutate(currency);
   };
@@ -118,40 +126,32 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
     try {
       setButtonDisabled(true);
       setButtonText("Processing...");
-      await axios.put(
+      const { data }: { data: { quoteStatus: string } } = await axios.put(
         `https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/accept/summary`,
         {
           successUrl: "no_url",
         }
       );
-      router.push(`/payin/${uuid}/pay`);
+
+      if (data.quoteStatus === "ACCEPTED") {
+        router.push(`/payin/${uuid}/pay`);
+      }
     } catch (error) {
       console.error("Error confirming payment:", error);
+      setErrorMessage("Error confirming payment. Please try again.");
+      setButtonDisabled(false);
+      setButtonText("Confirm");
     }
   };
 
   return (
-    <main className="flex h-screen w-full items-center justify-center">
+    <div className="flex h-screen w-full items-center justify-center">
       <Card className="w-full max-w-md mx-auto p-6 rounded-2xl shadow-md bg-white">
         <CardContent className="space-y-6">
-          {isLoading && (
-            <div className="text-center">
-              <h2 className="text-lg font-medium text-gray-600">Loading...</h2>
-              <div className="mt-4 flex justify-center">
-                <div className="w-8 h-8 border-4 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div>
-              </div>
-            </div>
-          )}
-          {error && (
-            <div className="text-center">
-              <h2 className="text-lg font-medium text-red-600">
-                Error loading payment summary
-              </h2>
-              <p className="text-sm text-gray-500 mt-2">
-                Please try again later.
-              </p>
-            </div>
-          )}
+          <StatusMessage
+            isLoading={isLoading}
+            errorMessage={error ? "Error loading payment summary.." : null}
+          />
           {!isLoading && !error && (
             <>
               <div className="text-center">
@@ -159,15 +159,15 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
                   {data?.merchantDisplayName || "Merchant Display Name"}
                 </h2>
                 <div className="text-4xl font-bold text-gray-900 mt-1">
-                  {data.displayCurrency.amount}{" "}
+                  {data?.displayCurrency.amount}{" "}
                   <span className="text-lg font-semibold">
-                    {data.displayCurrency.currency}
+                    {data?.displayCurrency.currency}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 mt-6">
                   For reference number:{" "}
                   <span className="font-semibold text-gray-700">
-                    {data.reference}
+                    {data?.reference}
                   </span>
                 </div>
               </div>
@@ -181,9 +181,11 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BTC">Bitcoin</SelectItem>
-                    <SelectItem value="ETH">Ethereum</SelectItem>
-                    <SelectItem value="LTC">Litecoin</SelectItem>
+                    {Object.entries(CurrencyEnum).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -220,10 +222,16 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
                   </Button>
                 </>
               )}
+
+              {errorMessage && (
+                <div className="text-center text-red-600 bg-red-100 p-3 rounded-md mb-4">
+                  {errorMessage}
+                </div>
+              )}
             </>
           )}
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }
