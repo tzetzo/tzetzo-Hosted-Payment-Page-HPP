@@ -95,7 +95,6 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
 
   const handleUpdateSummarySuccess = (data: PaymentSummary) => {
     setUpdatedData(data);
-    setShowDetails(true);
 
     if (data.acceptanceExpiryDate) {
       const expiryTime =
@@ -140,6 +139,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
   };
 
   const handleCurrencyChange = (currency: CurrencyCode) => {
+    setShowDetails(true);
     setSelectedCurrency(currency);
     updateSummaryMutation.mutate(currency);
   };
@@ -181,7 +181,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
                 handleCurrencyChange={handleCurrencyChange}
               />
 
-              {showDetails && updatedData && (
+              {showDetails && (
                 <PaymentDetails
                   updatedData={updatedData}
                   seconds={seconds}
