@@ -7,7 +7,13 @@ export default function PaymentExpiredCard() {
       <Card className="w-full max-w-md mx-auto p-12 rounded-2xl shadow-md bg-white text-center">
         <CardContent className="space-y-6">
           <div className="flex items-center justify-center">
-            <Image src="/alert.jpg" alt="Error Icon" width={60} height={60} />
+            <Image
+              src="/alert.svg"
+              alt="Error Icon"
+              width={60}
+              height={60}
+              priority
+            />
           </div>
           <h2 className="text-xl font-semibold text-foreground">
             Payment details expired
