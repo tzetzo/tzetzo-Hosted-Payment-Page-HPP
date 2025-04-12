@@ -1,14 +1,15 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import React, { use, useState, useEffect, useRef } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import StatusMessage from "@/components/StatusMessage";
 import { QRCode } from "@/components/QRCode";
 import CountdownTimer from "@/components/CountdownTimer";
+import AmountDue from "@/components/AmountDue";
+import AddressDetails from "@/components/AddressDetails";
 import { useExpiryContext } from "@/context/ExpiryContext";
 import { useRequest } from "@/hooks/useRequest";
-import { maskString } from "@/helpers/mask-string";
 import { copyToClipboard } from "@/helpers/copy-to-clipboard";
 import { CurrencyEnum } from "@/constants/currencyEnum";
 import { PaymentSummary } from "@/types/payment";
@@ -21,17 +22,31 @@ export default function PayQuotePage({ params }: PayQuotePageProps) {
   const { uuid } = use(params);
   const { setExpiryDate, setUUID } = useExpiryContext();
   const [copiedItem, setCopiedItem] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useRequest<PaymentSummary>(
-    uuid,
-    "GET",
-    "summary"
-  );
-
-  let setSeconds: (seconds: number) => void;
+  const {
+    data: paymentSummary,
+    isLoading,
+    error,
+  } = useRequest<PaymentSummary>(uuid, "GET", "summary");
 
   useEffect(() => {
-    if (!data) {
+    if (
+      error &&
+      axios.isAxiosError(error) &&
+      error.response?.status === 400 &&
+      error.response?.data &&
+      error.response.data?.errorList
+    ) {
+      console.log(error.response.data.errorList[0].message);
+      setErrorMessage(error.response.data.errorList[0].message);
+    }
+  }, [error]);
+
+  const setSecondsRef = useRef<(seconds: number) => void>();
+
+  useEffect(() => {
+    if (!paymentSummary) {
       // we only call setExpiryDate & setUUID here to redirect to /expired if the expiryDate is in the past
       // ex user tries to go back to the page after the expiry date
       setExpiryDate(1);
@@ -40,15 +55,19 @@ export default function PayQuotePage({ params }: PayQuotePageProps) {
     }
 
     // Set the expiryDate again in case it got changed
-    setExpiryDate(data.expiryDate);
+    setExpiryDate(paymentSummary.expiryDate);
     setUUID(uuid);
 
-    const expiryTime = new Date(data.expiryDate).getTime();
+    const expiryTime = new Date(paymentSummary.expiryDate).getTime();
     const currentTime = new Date().getTime();
     const timeDifference = expiryTime - currentTime;
 
-    setSeconds(Math.floor(timeDifference / 1000));
-  }, [data, setExpiryDate, setUUID, uuid, setSeconds]);
+    setSecondsRef.current?.(Math.floor(timeDifference / 1000));
+  }, [paymentSummary, setExpiryDate, setUUID, uuid]);
+
+  const handleCopy = (value: string, type: string) => {
+    copyToClipboard(value, setCopiedItem, type);
+  };
 
   return (
     <main className="flex h-screen w-full items-center justify-center">
@@ -56,84 +75,34 @@ export default function PayQuotePage({ params }: PayQuotePageProps) {
         <CardContent className="space-y-6">
           <StatusMessage
             isLoading={isLoading}
-            errorMessage={error ? "Error loading payment summary.." : null}
+            errorMessage={errorMessage ? errorMessage : null}
           />
-          {!isLoading && !error && (
+          {!isLoading && !error && paymentSummary && (
             <>
-              <div className="text-center">
-                <h2 className="text-xl font-medium text-gray-600">
-                  Pay with{" "}
-                  {
-                    CurrencyEnum[
-                      data?.paidCurrency?.currency as keyof typeof CurrencyEnum
-                    ]
-                  }
-                </h2>
+              <PaymentHeader paymentSummary={paymentSummary} />
 
-                <div className="text-sm text-gray-500 mt-6">
-                  To complete this payment send the amount due to the{" "}
-                  {data?.paidCurrency?.currency} address provided below.
-                </div>
-              </div>
+              <AmountDue
+                amount={paymentSummary.paidCurrency?.amount}
+                currency={paymentSummary.paidCurrency?.currency}
+                onCopy={handleCopy}
+                copiedItem={copiedItem}
+              />
 
-              <div className="text-sm flex justify-between border-t pt-3 border-b pb-3 text-gray-700">
-                <span>Amount due</span>
-                <div className="space-x-4">
-                  <span className="font-semibold">
-                    {data?.paidCurrency?.amount} {data?.paidCurrency?.currency}
-                  </span>
-                  <span
-                    className="text-blue-500 cursor-pointer"
-                    onClick={() =>
-                      copyToClipboard(
-                        String(data?.paidCurrency?.amount || ""),
-                        setCopiedItem,
-                        "amount"
-                      )
-                    }
-                  >
-                    {copiedItem === "amount" ? (
-                      <span>Copied!</span>
-                    ) : (
-                      <span>Copy</span>
-                    )}
-                  </span>
-                </div>
-              </div>
+              <AddressDetails
+                address={paymentSummary.address?.address}
+                currency={paymentSummary.paidCurrency?.currency}
+                onCopy={handleCopy}
+                copiedItem={copiedItem}
+              />
 
-              <div className="text-sm flex justify-between items-center -mt-2 pb-3 text-gray-700">
-                <span>{data?.paidCurrency?.currency} address</span>
-                <div className="space-x-4">
-                  <span className="font-semibold">
-                    {maskString(data?.address?.address || "")}
-                  </span>
-                  <span
-                    className="text-blue-500 cursor-pointer"
-                    onClick={() =>
-                      copyToClipboard(
-                        data?.address?.address || "",
-                        setCopiedItem,
-                        "address"
-                      )
-                    }
-                  >
-                    {copiedItem === "address" ? (
-                      <span>Copied!</span>
-                    ) : (
-                      <span>Copy</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <QRCode value={data?.address?.address || ""} />
+              <QRCode value={paymentSummary.address?.address || ""} />
 
               <div className="text-sm flex justify-between border-t pt-3 border-b pb-3 text-gray-700">
                 <span>Time left to pay</span>
                 <CountdownTimer
                   initialSeconds={0}
                   onSetSeconds={(setter) => {
-                    setSeconds = setter;
+                    setSecondsRef.current = setter;
                   }}
                 />
               </div>
@@ -144,3 +113,24 @@ export default function PayQuotePage({ params }: PayQuotePageProps) {
     </main>
   );
 }
+
+const PaymentHeader = React.memo(
+  ({ paymentSummary }: { paymentSummary: PaymentSummary }) => (
+    <div className="text-center">
+      <h2 className="text-xl font-medium text-gray-600">
+        Pay with{" "}
+        {
+          CurrencyEnum[
+            paymentSummary.paidCurrency.currency as keyof typeof CurrencyEnum
+          ]
+        }
+      </h2>
+      <div className="text-sm text-gray-500 mt-6">
+        To complete this payment send the amount due to the{" "}
+        {paymentSummary.paidCurrency.currency} address provided below.
+      </div>
+    </div>
+  )
+);
+
+PaymentHeader.displayName = "PaymentHeader";
