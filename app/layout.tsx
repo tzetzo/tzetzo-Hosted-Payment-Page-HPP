@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import Providers from "@/components/providers";
+import Header from "@/components/Header";
 import { ExpiryProvider } from "@/context/ExpiryContext";
 import "./globals.css";
 
@@ -30,7 +32,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <ExpiryProvider>{children}</ExpiryProvider>
+          <ExpiryProvider>
+            <Header />
+            {children}
+          </ExpiryProvider>
         </Providers>
       </body>
     </html>
