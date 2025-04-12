@@ -107,6 +107,10 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
       );
       setSeconds(timeDifference);
 
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
       if (timeDifference > 0) {
         timeoutRef.current = setTimeout(() => {
           if (selectedCurrency) {
@@ -169,7 +173,12 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
   return (
     <div className="flex h-screen w-full items-center justify-center">
       <Card className="w-full max-w-md mx-auto p-6 rounded-2xl shadow-md bg-white">
-        <CardContent className="space-y-6">
+        <CardContent
+          className={`space-y-6 overflow-hidden transition-all duration-500 ease-in-out ${
+            showDetails ? "max-h-[430px]" : "max-h-[251px]"
+          }`}
+        >
+          {/* 227 - 406 */}
           <StatusMessage
             isLoading={isLoading}
             errorMessage={errorMessage ? errorMessage : null}

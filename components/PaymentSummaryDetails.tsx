@@ -18,7 +18,7 @@ interface PaymentSummaryDetailsProps {
 const PaymentSummaryDetails = React.memo(
   ({ paymentSummary, handleCurrencyChange }: PaymentSummaryDetailsProps) => (
     <div>
-      <div className="text-center">
+      <div className="text-center pb-6">
         <h2 className="text-xl font-medium text-gray-600">
           {paymentSummary?.merchantDisplayName || "Merchant Display Name"}
         </h2>
@@ -40,12 +40,12 @@ const PaymentSummaryDetails = React.memo(
           Pay with
         </label>
         <Select onValueChange={handleCurrencyChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full cursor-pointer">
             <SelectValue placeholder="Select currency" />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(CurrencyEnum).map(([code, name]) => (
-              <SelectItem key={code} value={code}>
+              <SelectItem key={code} value={code} className="cursor-pointer">
                 {name}
               </SelectItem>
             ))}
