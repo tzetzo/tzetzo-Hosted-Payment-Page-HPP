@@ -20,16 +20,3 @@ export const useRequest = (
     enabled: !!uuid && enabled, // Only fetch if uuid is available and enabled is true
   });
 };
-
-// export const usePaymentSummary = (uuid: string | undefined) => {
-//   return useQuery<PaymentSummary>({
-//     queryKey: ["paymentSummary", uuid],
-//     queryFn: async () => {
-//       const response = await axios.get(
-//         `https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/summary`
-//       );
-//       return response.data;
-//     },
-//     enabled: !!uuid, // Only fetch if uuid is available
-//   });
-// };
