@@ -56,4 +56,6 @@ const PaymentSummaryDetails = React.memo(
   )
 );
 
+PaymentSummaryDetails.displayName = "PaymentSummaryDetails";
+
 export default PaymentSummaryDetails;

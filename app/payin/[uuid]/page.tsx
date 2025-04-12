@@ -12,7 +12,6 @@ import StatusMessage from "@/components/StatusMessage";
 import { useExpiryContext } from "@/context/ExpiryContext";
 import { useCountdownTimer } from "@/hooks/useCountdownTimer";
 import { useRequest } from "@/hooks/useRequest";
-import { formatTime } from "@/helpers/format-time";
 import { CurrencyCode } from "@/constants/currencyEnum";
 import { PaymentSummary } from "@/types/payment";
 
