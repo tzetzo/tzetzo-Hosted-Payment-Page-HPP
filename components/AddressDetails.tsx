@@ -16,10 +16,10 @@ const AddressDetails = React.memo(
       <div className="space-x-4">
         <span className="font-semibold">{maskString(address)}</span>
         <span
-          className="text-blue-500 cursor-pointer"
+          className="text-blue-500 cursor-pointer inline-block w-[45px] text-right"
           onClick={() => onCopy(address, "address")}
         >
-          {copiedItem === "address" ? <span>Copied!</span> : <span>Copy</span>}
+          {copiedItem === "address" ? "Copied!" : "Copy"}
         </span>
       </div>
     </div>

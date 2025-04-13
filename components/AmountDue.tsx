@@ -16,10 +16,10 @@ const AmountDue = React.memo(
           {amount} {currency}
         </span>
         <span
-          className="text-blue-500 cursor-pointer"
+          className="text-blue-500 cursor-pointer inline-block w-[45px] text-right"
           onClick={() => onCopy(String(amount), "amount")}
         >
-          {copiedItem === "amount" ? <span>Copied!</span> : <span>Copy</span>}
+          {copiedItem === "amount" ? "Copied!" : "Copy"}
         </span>
       </div>
     </div>
