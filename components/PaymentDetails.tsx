@@ -47,7 +47,7 @@ const PaymentDetails = React.memo(
       <Button
         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm cursor-pointer"
         onClick={handleConfirm}
-        disabled={buttonDisabled}
+        disabled={buttonDisabled || updateSummaryMutation.isPending}
       >
         {buttonText}
       </Button>
