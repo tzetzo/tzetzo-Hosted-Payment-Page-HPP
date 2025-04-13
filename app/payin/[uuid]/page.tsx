@@ -99,8 +99,8 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
     onSuccess: (data: PaymentSummary) => {
       handleUpdateSummarySuccess(data);
     },
-    onError: (error: unknown) => {
-      handleUpdateSummaryError(error);
+    onError: () => {
+      setErrorMessage("Error updating payment summary.");
     },
   });
 
@@ -134,22 +134,6 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
     } else {
       setErrorMessage("Invalid or missing acceptanceExpiryDate");
       setSeconds(0);
-    }
-  };
-
-  const handleUpdateSummaryError = (error: unknown) => {
-    if (
-      axios.isAxiosError(error) &&
-      error.response?.status === 400 &&
-      error.response?.data &&
-      error.response.data.code === "MER-PAY-2003"
-    ) {
-      setErrorMessage(error.response.data.message);
-      setTimeout(() => {
-        router.push(`/payin/${uuid}/pay`);
-      }, 3000);
-    } else {
-      setErrorMessage("Error updating payment summary.");
     }
   };
 
