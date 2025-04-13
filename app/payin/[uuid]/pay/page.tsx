@@ -47,16 +47,18 @@ export default function PayQuotePage({ params }: PayQuotePageProps) {
 
   useEffect(() => {
     if (!paymentSummary) {
-      // we only call setExpiryDate & setUUID here to redirect to /expired if the expiryDate is in the past
-      // ex user tries to go back to the page after the expiry date
+      // Set expiryDate and UUID to handle cases where the expiryDate is in the past.
+      // This ensures the user is redirected to the /expired page if they navigate back to this page after the expiry date has passed.
       setExpiryDate(1);
       setUUID(uuid);
       return;
     }
 
-    // Set the expiryDate again in case it got changed
-    setExpiryDate(paymentSummary.expiryDate);
-    setUUID(uuid);
+    // Update the expiryDate to ensure it reflects any changes
+    // This is useful if the expiryDate was modified on the previous page during repeated calls to /update/summary,
+    // though this is not applicable with the current backend api implementation.
+    // setExpiryDate(paymentSummary.expiryDate);
+    // setUUID(uuid);
 
     const expiryTime = new Date(paymentSummary.expiryDate).getTime();
     const currentTime = new Date().getTime();

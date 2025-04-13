@@ -24,7 +24,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
   const router = useRouter();
   const [seconds, setSeconds] = useCountdownTimer(0);
 
-  const { setExpiryDate, setUUID } = useExpiryContext();
+  const { setExpiryDate, setUUID, accepted, setAccepted } = useExpiryContext();
 
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode | null>(
     null
@@ -44,6 +44,17 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
     error,
   } = useRequest<PaymentSummary>(uuid, "GET", "summary");
 
+  // Redirect to PayQuotePage if the user revisits and expiryDate is still valid
+  useEffect(() => {
+    if (accepted) {
+      const expiryTime = new Date(paymentSummary?.expiryDate).getTime();
+      const currentTime = new Date().getTime();
+      if (expiryTime > currentTime) {
+        router.push(`/payin/${uuid}/pay`);
+      }
+    }
+  }, [accepted, router, uuid, paymentSummary]);
+
   useEffect(() => {
     if (
       error &&
@@ -61,8 +72,8 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
 
   useEffect(() => {
     if (paymentSummary?.expiryDate) {
-      // We set the expiryDate here to redirect to /expired if the expiryDate is in the past
-      // The expiryDate remains consistent when making '/${uuid}/summary' request from both '<DOMAIN>/payin/<UUID>' and '<DOMAIN>/payin/<UUID>/pay' pages
+      // Set the expiryDate to handle redirection to the /expired page when the expiryDate has already passed.
+      // With the current backend api implementation the expiryDate is consistent when fetching the data from '/${uuid}/summary' in both '<DOMAIN>/payin/<UUID>' and '<DOMAIN>/payin/<UUID>/pay' pages.
       setExpiryDate(paymentSummary.expiryDate);
       setUUID(uuid);
     }
@@ -160,6 +171,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
       );
 
       if (data.quoteStatus === "ACCEPTED") {
+        setAccepted(true);
         router.push(`/payin/${uuid}/pay`);
       }
     } catch (error) {
