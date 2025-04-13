@@ -40,8 +40,8 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
 
   const {
     data: paymentSummary,
-    isLoading,
-    error,
+    isLoading: paymentSummaryIsLoading,
+    error: paymentSummaryError,
   } = useRequest<PaymentSummary>(uuid, "GET", "summary");
 
   // Redirect to PayQuotePage if the user revisits and expiryDate is still valid
@@ -57,16 +57,16 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
 
   useEffect(() => {
     if (
-      error &&
-      axios.isAxiosError(error) &&
-      error.response?.status === 400 &&
-      error.response?.data &&
-      error.response.data?.errorList
+      paymentSummaryError &&
+      axios.isAxiosError(paymentSummaryError) &&
+      paymentSummaryError.response?.status === 400 &&
+      paymentSummaryError.response?.data &&
+      paymentSummaryError.response.data?.errorList
     ) {
-      console.log(error.response.data.errorList[0].message);
-      setErrorMessage(error.response.data.errorList[0].message);
+      console.error(paymentSummaryError.response.data.errorList[0].message);
+      setErrorMessage(paymentSummaryError.response.data.errorList[0].message);
     }
-  }, [error]);
+  }, [paymentSummaryError]);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -176,10 +176,10 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
         >
           {/* 227 - 406 */}
           <StatusMessage
-            isLoading={isLoading}
+            isLoading={paymentSummaryIsLoading}
             errorMessage={errorMessage ? errorMessage : null}
           />
-          {!isLoading && !errorMessage && (
+          {!paymentSummaryIsLoading && !errorMessage && (
             <>
               <PaymentSummaryDetails
                 paymentSummary={paymentSummary}
