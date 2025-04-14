@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import axios, { Method } from "axios";
-import { PaymentSummary } from "@/types/payment";
 
 export const useRequest = (
   uuid: string | undefined,
@@ -8,7 +7,7 @@ export const useRequest = (
   path: string,
   enabled: boolean = true
 ) => {
-  return useQuery<PaymentSummary>({
+  return useQuery({
     queryKey: ["request", uuid, path],
     queryFn: async () => {
       const response = await axios({

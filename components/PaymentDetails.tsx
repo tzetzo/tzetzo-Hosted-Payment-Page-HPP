@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { formatTime } from "@/helpers/format-time";
 
 interface PaymentDetailsProps {
-  updatedData: PaymentSummary;
+  updatedData: PaymentSummary | null;
   seconds: number;
   buttonDisabled: boolean;
   buttonText: string;

@@ -42,12 +42,12 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
     data: paymentSummary,
     isLoading: paymentSummaryIsLoading,
     error: paymentSummaryError,
-  } = useRequest<PaymentSummary>(uuid, "GET", "summary");
+  } = useRequest(uuid, "GET", "summary");
 
   // Redirect to PayQuotePage if the user revisits and expiryDate is still valid
   useEffect(() => {
     if (accepted) {
-      const expiryTime = new Date(paymentSummary?.expiryDate).getTime();
+      const expiryTime = new Date(paymentSummary?.expiryDate ?? 0).getTime();
       const currentTime = new Date().getTime();
       if (expiryTime > currentTime) {
         router.push(`/payin/${uuid}/pay`);
@@ -56,15 +56,8 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
   }, [accepted, router, uuid, paymentSummary]);
 
   useEffect(() => {
-    if (
-      paymentSummaryError &&
-      axios.isAxiosError(paymentSummaryError) &&
-      paymentSummaryError.response?.status === 400 &&
-      paymentSummaryError.response?.data &&
-      paymentSummaryError.response.data?.errorList
-    ) {
-      console.error(paymentSummaryError.response.data.errorList[0].message);
-      setErrorMessage(paymentSummaryError.response.data.errorList[0].message);
+    if (paymentSummaryError) {
+      setErrorMessage("Error fetching payment summary.");
     }
   }, [paymentSummaryError]);
 
@@ -96,7 +89,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
       );
       return response.data;
     },
-    onSuccess: (data: PaymentSummary) => {
+    onSuccess: (data) => {
       handleUpdateSummarySuccess(data);
     },
     onError: () => {
@@ -158,8 +151,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
         setAccepted(true);
         router.push(`/payin/${uuid}/pay`);
       }
-    } catch (error) {
-      console.error("Error confirming payment:", error);
+    } catch {
       setErrorMessage("Error confirming payment.");
       setButtonDisabled(false);
       setButtonText("Confirm");
@@ -174,7 +166,6 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
             showDetails ? "max-h-[430px]" : "max-h-[251px]"
           }`}
         >
-          {/* 227 - 406 */}
           <StatusMessage
             isLoading={paymentSummaryIsLoading}
             errorMessage={errorMessage ? errorMessage : null}
@@ -182,7 +173,7 @@ export default function AcceptQuotePage({ params }: AcceptQuotePageProps) {
           {!paymentSummaryIsLoading && !errorMessage && (
             <>
               <PaymentSummaryDetails
-                paymentSummary={paymentSummary}
+                paymentSummary={paymentSummary ?? null}
                 handleCurrencyChange={handleCurrencyChange}
               />
 

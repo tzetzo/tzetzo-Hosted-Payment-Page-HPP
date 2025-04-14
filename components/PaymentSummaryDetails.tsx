@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 
 interface PaymentSummaryDetailsProps {
-  paymentSummary: PaymentSummary | null;
+  paymentSummary: PaymentSummary;
   handleCurrencyChange: (currency: CurrencyCode) => void;
 }
 
@@ -23,9 +23,9 @@ const PaymentSummaryDetails = React.memo(
           {paymentSummary?.merchantDisplayName || "Merchant Display Name"}
         </h2>
         <div className="text-4xl font-bold text-gray-900 mt-1">
-          {paymentSummary?.displayCurrency.amount}{" "}
+          {paymentSummary?.displayCurrency?.amount}{" "}
           <span className="text-lg font-semibold">
-            {paymentSummary?.displayCurrency.currency}
+            {paymentSummary?.displayCurrency?.currency}
           </span>
         </div>
         <div className="text-sm text-gray-500 mt-6">
