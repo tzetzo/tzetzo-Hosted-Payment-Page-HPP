@@ -13,7 +13,7 @@ export default function Header() {
         <div className="space-x-4 text-xl">
           <Link
             href="/payin/paste_uuid_here"
-            className="hover:text-blue-800 focus:text-blue-900 hover:no-underline"
+            className="hover:text-blue-800 focus:text-blue-900 hover:no-underline text-3xl"
           >
             Hosted Payments
           </Link>
