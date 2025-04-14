@@ -1,5 +1,3 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
 First, install the dependencies:
@@ -14,23 +12,25 @@ Second, run the development server:
 npm run dev
 ```
 
+Third, run the tests:
+
+```bash
+npm run test
+```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Expiry Handling
 
-## Learn More
+With the current backend API implementation, the `expiryDate` remains consistent when fetching data from `/${uuid}/summary` on both the `<DOMAIN>/payin/<UUID>` and `<DOMAIN>/payin/<UUID>/pay` pages.
 
-To learn more about Next.js, take a look at the following resources:
+Because of this, the `expiryDate` from the initial `/${uuid}/summary` request is used to start the countdown when the expiry page is first shown. This logic is handled inside the `ExpiryContext`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+As a result, if the user stays on the `<DOMAIN>/payin/<UUID>` page long enough, the session will eventually expire.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is deployed on Vercel and can be accessed at [https://tzetzo-hosted-payment-page-hpp.vercel.app/](https://tzetzo-hosted-payment-page-hpp.vercel.app/).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
