@@ -1,5 +1,5 @@
 import Hero from "@/components/Hero";
-const bg = "/background.jpg";
+import bg from "@/public/background.jpg";
 
 export default function Home() {
   return (
