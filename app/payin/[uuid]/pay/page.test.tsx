@@ -55,10 +55,10 @@ describe("PayQuotePage", () => {
     await act(async () => {
       render(<PayQuotePage params={Promise.resolve({ uuid: "test-uuid" })} />);
     });
-    // screen.debug();
-    expect(screen.getByText(/pay with bitcoin/i)).toBeInTheDocument();
-    expect(screen.getByText(/200 BTC/i)).toBeInTheDocument();
-    expect(screen.getByText(/test-address/i)).toBeInTheDocument();
+
+    expect(await screen.findByText(/pay with bitcoin/i)).toBeInTheDocument();
+    expect(await screen.findByText(/200 BTC/i)).toBeInTheDocument();
+    expect(await screen.findByText(/test-address/i)).toBeInTheDocument();
   });
 
   it("handles paymentSummaryError correctly", async () => {
