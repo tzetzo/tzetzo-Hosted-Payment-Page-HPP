@@ -33,4 +33,5 @@ As a result, if the user stays on the `<DOMAIN>/payin/<UUID>` page long enough, 
 ## Deploy on Vercel
 
 This project is deployed on Vercel and can be accessed at [https://tzetzo-hosted-payment-page-hpp.vercel.app/](https://tzetzo-hosted-payment-page-hpp.vercel.app/).
+> **Note:** Ensure that your backend API allows requests from the domain `https://tzetzo-hosted-payment-page-hpp.vercel.app/`. You may need to configure CORS settings to permit this domain.
 
